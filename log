@@ -1,0 +1,3 @@
+TODO:
+- string() (still need to add escape characters in the string)
+- number() (still need to add minus and scientific notation)

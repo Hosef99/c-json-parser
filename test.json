@@ -1,0 +1,17 @@
+{
+    "string": "Hello\nWorld",
+    "number_int": 42,
+    "number_float": -3.14,
+    "number_scientific": 2.9979e8,
+    "boolean_true": true,
+    "boolean_false": false,
+    "null_value": null,
+    "array": [1, 2, 3],
+    "nested": {
+        "key": "value"
+    },
+    "empty_array": [],
+    "empty_object": {},
+    "escaped": "Quote: \"test\"",
+    "unicode": "\u03BB"
+}
