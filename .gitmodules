@@ -1,0 +1,3 @@
+[submodule "lib/string-builder"]
+	path = lib/string-builder
+	url = git@github.com:Hosef99/string-builder.git

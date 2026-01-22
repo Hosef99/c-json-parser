@@ -3,6 +3,7 @@
 
 #include "lexer.h"
 #include "file.h"
+#include "string_builder.h"
 
 int main() {
     char *source = read_file("test.json");
