@@ -21,8 +21,7 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    const char *start;
-    int length;
+    const char *string;
 } Token;
 
 void init_lexer(const char *source);
