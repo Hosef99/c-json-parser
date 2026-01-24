@@ -1,13 +1,13 @@
 #ifndef JSON_LEXER_H
 #define JSON_LEXER_H
 
+#define TOKEN_EMPTY (Token) {.type = TOKEN_ERROR, .string = "Empty"};
+
 typedef enum {
     TOKEN_STRING,
     TOKEN_NUMBER,
     TOKEN_TRUE,
     TOKEN_FALSE,
-    TOKEN_MINUS,
-    TOKEN_E,
     TOKEN_NULL,
     TOKEN_LBRACE,
     TOKEN_RBRACE,

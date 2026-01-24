@@ -1,0 +1,6 @@
+[
+    123,
+    "Testing",
+    "Hello world!",
+    ["This is a nested array WAHAHA", 12345, "Another test"]
+]

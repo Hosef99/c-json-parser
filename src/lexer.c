@@ -4,16 +4,12 @@
 #include "lexer.h"
 #include "string_builder.h"
 
-typedef struct {
-    const char *start;
-    const char *current;
-} Lexer;
-
-Lexer lexer;
+char *start;
+char *current;
 
 void init_lexer(const char *source) {
-    lexer.start = source;
-    lexer.current = source;
+    start = source;
+    current = source;
 }
 
 static bool is_digit(char c) {
@@ -25,20 +21,20 @@ static bool is_alpha(char c) {
 }
 
 static bool is_at_end() {
-    return lexer.current[0] == '\0';
+    return current[0] == '\0';
 }
 
 static char peek() {
-    return lexer.current[0];
+    return current[0];
 }
 
 static char peek_next() {
     if (is_at_end()) return '\0';
-    return lexer.current[1];
+    return current[1];
 }
 
 static char advance() {
-    return *lexer.current++;
+    return *current++;
 }
 
 static Token make_token(TokenType type, char *string) {
@@ -66,7 +62,7 @@ static Token string() {
     advance();
 
     StringBuilder *sb = sb_create(16);
-    sb_append_cstr_escaped_len(sb, lexer.start + 1, (size_t) (lexer.current-lexer.start - 3));
+    sb_append_cstr_escaped_len(sb, start + 1, (size_t) (current-start - 2));
     Token token = make_token(TOKEN_STRING, sb_to_string(sb));
     sb_destroy(sb);
     return token;
@@ -81,8 +77,14 @@ static Token number() {
         while (is_digit(peek())) advance();
     }
 
+    if (peek() == 'e' && is_digit(peek_next())) {
+        advance();
+
+        while (is_digit(peek())) advance();
+    }
+
     StringBuilder *sb = sb_create(16);
-    sb_append_cstr_len(sb, lexer.start, (size_t)(lexer.current - lexer.start));
+    sb_append_cstr_len(sb, start, (size_t)(current - start));
     Token token = make_token(TOKEN_NUMBER, sb_to_string(sb));
     sb_destroy(sb);
     return token;
@@ -91,21 +93,21 @@ static Token number() {
 static Token identifier() {
     // only 3 identifiers really: "true", "false", and "null"
     while (is_alpha(peek()) || is_digit(peek())) advance();
-    switch (lexer.start[0]) {
+    switch (start[0]) {
         case 't': {
-            if (lexer.current - lexer.start == 4 && memcmp(lexer.start, "true", 4) == 0) {
+            if (current - start == 4 && memcmp(start, "true", 4) == 0) {
                 return make_token(TOKEN_TRUE, NULL); 
             } 
             break;
         }
         case 'f': {
-            if (lexer.current - lexer.start == 5 && memcmp(lexer.start, "false", 5) == 0) {
+            if (current - start == 5 && memcmp(start, "false", 5) == 0) {
                 return make_token(TOKEN_FALSE, NULL);
             }
             break;
         }
         case 'n': {
-            if (lexer.current - lexer.start == 4 && memcmp(lexer.start, "null", 4) == 0) {
+            if (current - start == 4 && memcmp(start, "null", 4) == 0) {
                 return make_token(TOKEN_NULL, NULL);
             }
             break;
@@ -132,7 +134,7 @@ void skip_whitespace() {
 
 Token scan_token() {
     skip_whitespace();
-    lexer.start = lexer.current;
+    start = current;
 
     if (is_at_end()) return make_token(TOKEN_EOF, NULL);
     char c = advance();
@@ -151,10 +153,6 @@ Token scan_token() {
     }
 
     return make_error_token("Unexpected character.");
-}
-
-void lexer_test() {
-    
 }
 
 void print_token(Token token) {
