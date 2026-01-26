@@ -1,3 +1,8 @@
 TODO:
-- string() (still need to add escape characters in the string)
-- number() (still need to add minus and scientific notation)
+How do i want the interface to work?
+
+JsonValue data = json_create(filename);
+
+double value = json_as_number(json_obj_get(data, key));
+
+json_destroy(data);
