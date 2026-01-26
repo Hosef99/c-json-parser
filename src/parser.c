@@ -54,7 +54,7 @@ void json_print(JsonValue *value, int indent) {
                 for (int i = 0; i < indent + 1; i++)
                     printf("  ");
                 printf("Value  :\n");
-                json_print(value->as.object.members[i].value, indent + 2);
+                json_print(&(value->as.object.members[i].value), indent + 2);
             }
             break;
         }
@@ -162,7 +162,7 @@ static JsonValue *parse_object() {
         }
 
         members[count].key = key_copy;
-        members[count].value = parsed;
+        members[count].value = *parsed;
         count++;
 
         if (match(TOKEN_COMMA)) {
@@ -288,7 +288,6 @@ void json_free(JsonValue *value) {
         case JSON_OBJECT: {
             for (size_t i = 0; i < value->as.object.count; i++) {
                 free(value->as.object.members[i].key);
-                json_free(value->as.object.members[i].value);
             }
             free(value->as.object.members);
             break;

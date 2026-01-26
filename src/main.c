@@ -29,4 +29,18 @@ int main() {
     json_free(value);
 
     free(tokens);
+
+    JsonValue test;
+    test.type = JSON_NUMBER;
+    test.as.number = 10.0;
+
+    JsonValue result;
+
+    Table table;
+    json_table_init(&table);
+    json_table_set(&table, "test", test);
+    json_table_get(&table, "test", &result);
+    printf("result number %g\n", result.as.number);
+
+    return 0;
 }
