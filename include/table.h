@@ -1,6 +1,8 @@
 #ifndef JSON_TABLE_H
 #define JSON_TABLE_H
 
+#include "parser.h"
+
 typedef struct {
     size_t count;
     size_t capacity;

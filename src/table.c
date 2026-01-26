@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "table.h"
 #include "parser.h"
@@ -25,35 +27,35 @@ static JsonMember *find_member(JsonMember *members, size_t capacity, char *key) 
         JsonMember *member = &members[index];
         if (member->key == NULL) {
             if (member->value.type == JSON_NULL) {
-                return tombstone != NULL ? tombstone : entry;
+                return tombstone != NULL ? tombstone : member;
             } else {
-                if (tombstone == NULL) tombstone = entry;
+                if (tombstone == NULL) tombstone = member;
             }
         }
 
         if (strcmp(member->key, key) == 0) {
-            return entry;
+            return member;
         }
 
         index = (index + 1) % capacity;
     }
 }
 
-static void adjust_capacity(Table *table, int capacity) {
-    JsonMember *members = malloc(sizeof(JsonMember);
-    for (int i = 0; i < capacity; i++) {
+static void adjust_capacity(Table *table, size_t capacity) {
+    JsonMember *members = malloc(sizeof(JsonMember));
+    for (size_t i = 0; i < capacity; i++) {
         members[i].key = NULL;
-        members[i].value = VAL_NIL;
+        members[i].value.type = JSON_NULL;
     }
 
     table->count = 0;
-    for (int i = 0; i < table->capacity; i++) {
+    for (size_t i = 0; i < table->capacity; i++) {
         JsonMember *member = &table->members[i];
         if (member->key == NULL) continue;
 
-        JsonMember *dest = find_member(member, capacity, entry->key);
-        dest->key = entry->key;
-        dest->value = entry->value;
+        JsonMember *dest = find_member(member, capacity, member->key);
+        dest->key = member->key;
+        dest->value = member->value;
         table->count++;
     }
 
@@ -86,15 +88,14 @@ bool json_table_get(Table *table, char *key, JsonValue *value) {
 }
 
 bool json_table_set(Table *table, char *key, JsonValue value) { 
-    JsonMember *member = find_member(table->members, table->capacity, key);
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
-       size_t capacity = table->capacity * 2;
+       size_t capacity = table->capacity ? table->capacity * 2 : 8;
         adjust_capacity(table, capacity);
     }
     JsonMember *member = find_member(table->members, table->capacity, key);
     bool is_new_key = member->key == NULL;
 
-    if (is_new_key && member->value.type == JSON_NULL)) table->count++;
+    if (is_new_key && member->value.type == JSON_NULL) table->count++;
 
     member->key = key;
     member->value = value;
@@ -104,7 +105,7 @@ bool json_table_set(Table *table, char *key, JsonValue value) {
 bool json_table_delete(Table *table, char *key) { 
     if (table->count == 0) return false;
 
-    JsonMember *member = find_entry(table->members, table->capacity, key);
+    JsonMember *member = find_member(table->members, table->capacity, key);
     if (member->key == NULL) return false;
 
     member->key = NULL;

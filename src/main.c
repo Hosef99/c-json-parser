@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "table.h"
 #include "lexer.h"
 #include "file.h"
 #include "parser.h"
@@ -21,9 +22,11 @@ int main() {
         token_count++;
     }
 
-    JsonValue value = json_parse(tokens, token_count);
+    JsonValue *value = json_parse(tokens, token_count);
 
     json_print(value, 0);
+
+    json_free(value);
 
     free(tokens);
 }

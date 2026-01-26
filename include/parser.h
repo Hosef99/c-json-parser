@@ -37,10 +37,11 @@ struct JsonValue {
 
 struct JsonMember {
     char *key;
-    JsonValue value;
+    JsonValue *value;
 };
 
-JsonValue json_parse(Token *tokens, size_t token_count);
-void json_print(JsonValue value, int indent);
+JsonValue *json_parse(Token *tokens, size_t token_count);
+void json_print(JsonValue *value, int indent);
+void json_free(JsonValue *value);
 
 #endif
