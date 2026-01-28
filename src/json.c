@@ -4,7 +4,7 @@
 
 #include "lexer.h"
 #include "parser.h"
-
+#include "error.h"
 #include "json.h"
 
 
@@ -37,7 +37,10 @@ JsonValue *json_init(const char *source) {
 }
 
 JsonValue *json_array_get(JsonValue *value, size_t index) {
-    if (index >= value->as.array.count) return NULL; // ERROR
+    if (index >= value->as.array.count) {
+        handle_error(ERR_BOUNDS, "Array index out of bounds");
+        return NULL;
+}
     return &(value->as.array.values[index]);
 }
 
@@ -52,25 +55,43 @@ JsonValue *json_object_get(JsonValue *value, char *key) {
 }
 
 double json_as_number(JsonValue *value) {
-    if (!json_is_number(value)) return -1; // ERROR
+   if (!json_is_number(value)) {
+    handle_error(ERR_TYPE, "Expected number value");
+    return -1;
+} // ERROR
     return value->as.number;
 }
 
 char *json_as_string(JsonValue *value) {
     /* Be careful, this returns a reference, it will be destroyed when the json is destroyed. */
-    if (!json_is_string(value)) return NULL; // ERROR
+    if (!json_is_string(value)) {
+    handle_error(ERR_TYPE, "Expected JSON string");
+    return NULL;
+} // ERROR
     return value->as.string;
 }
 
 char *json_copy_string(JsonValue *value) {
-    if (value->type != JSON_STRING) return NULL; // ERROR
+    if (value->type != JSON_STRING) {
+handle_error(ERR_TYPE, "Expected JSON string for copy");
+return NULL;
+} // ERROR
     char *copied = strdup(value->as.string);
-    return copied;
+if (!copied) {
+handle_error(ERR_MEMORY, "Failed to allocate string copy");
+return NULL;
+}
+
+
+return copied;
 }
 
 int json_as_bool(JsonValue *value) {
-    if (value->type != JSON_BOOLEAN) return false; // ERROR, please fix
-    return value->as.boolean;
+    if (value->type != JSON_BOOLEAN) {
+        handle_error(ERR_TYPE, "Expected JSON boolean");
+        return -1;   // error indicator
+    }
+    return value->as.boolean;  // 0 or 1
 }
 
 int json_is_null(JsonValue *value) {
