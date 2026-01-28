@@ -41,48 +41,6 @@ JsonValue *json_parse(Token *input_tokens, size_t input_token_count) {
     return result;
 }
 
-void json_print(JsonValue *value, int indent) {
-    for (int i = 0; i < indent; i++)
-        printf("  ");
-    switch (value->type) {
-        case JSON_OBJECT: {
-            printf("OBJECT :\n");
-            for (size_t i = 0; i < value->as.object.count; i++) {
-                for (int i = 0; i < indent + 1; i++)
-                    printf("  ");
-                printf("Key    : %s\n", value->as.object.members[i].key);
-                for (int i = 0; i < indent + 1; i++)
-                    printf("  ");
-                printf("Value  :\n");
-                json_print(&(value->as.object.members[i].value), indent + 2);
-            }
-            break;
-        }
-        case JSON_ARRAY: {
-            printf("ARRAY  :\n");
-            for (size_t i = 0; i < value->as.array.count; i++) {
-                json_print(&(value->as.array.values[i]), indent + 1);
-            }
-            break;
-        }
-        case JSON_STRING:
-            printf("STRING : %s\n", value->as.string);
-            break;
-        case JSON_NUMBER:
-            printf("NUMBER : %g\n", value->as.number);
-            break;
-        case JSON_BOOLEAN:
-            printf("BOOLEAN: %s\n", value->as.boolean ? "TRUE" : "FALSE");
-            break;
-        case JSON_NULL:
-            printf("NULL:\n");
-            break;
-        default:
-            printf("WHAT ARE YOU???\n");
-            break;
-    }
-}
-
 static JsonValue *parse_value() {
     Token curr_token = peek();
     switch (curr_token.type) {
@@ -283,31 +241,3 @@ static JsonValue *parse_null() {
     return value;
 }
 
-void json_free(JsonValue *value) {
-    switch (value->type) {
-        case JSON_OBJECT: {
-            for (size_t i = 0; i < value->as.object.count; i++) {
-                free(value->as.object.members[i].key);
-            }
-            free(value->as.object.members);
-            break;
-        }
-        case JSON_ARRAY: {
-            for (size_t i = 0; i < value->as.array.count; i++) json_free(&(value->as.array.values[i]));
-
-            free(value->as.array.values);
-            break;
-        }
-        case JSON_STRING: {
-            free(value->as.string);
-            break;
-        }
-        case JSON_NUMBER:
-        case JSON_BOOLEAN:
-        case JSON_NULL:
-        case JSON_ERROR:
-        default:
-            break;
-    }
-    free(value);
-}

@@ -7,7 +7,7 @@
 char *start;
 char *current;
 
-void init_lexer(const char *source) {
+void lexer_init(const char *source) {
     start = source;
     current = source;
 }

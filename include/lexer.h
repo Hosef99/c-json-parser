@@ -24,9 +24,8 @@ typedef struct {
     const char *string;
 } Token;
 
-void init_lexer(const char *source);
+void lexer_init(const char *source);
 Token scan_token();
-void lexer_test();
 void print_token(Token token);
 
 static inline char *token_type_to_string(TokenType type) {

@@ -2,7 +2,6 @@
 #define JSON_JSON_H
 
 #include "parser.h"
-#include "table.h"
 
 JsonValue *json_array_get(JsonValue *value, size_t index);
 JsonValue *json_object_get(JsonValue *value, char *key);
