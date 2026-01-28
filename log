@@ -6,3 +6,12 @@ JsonValue data = json_create(filename);
 double value = json_as_number(json_obj_get(data, key));
 
 json_destroy(data);
+
+
+Current progress: (2026-1-27)
+Successfully implemented the hash table, just need to link any object to a table right now.
+afterwards, I would need to write another json.c script to expose user friendly apis like the described above
+need to add a few features:
+- array element extraction
+- object hashh table linking
+- getting values as types (json_as_number, json_as_string... etc.)
