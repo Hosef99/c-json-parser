@@ -15,3 +15,13 @@ need to add a few features:
 - array element extraction
 - object hashh table linking
 - getting values as types (json_as_number, json_as_string... etc.)
+
+
+------------------------------------
+
+2026-1-28
+- finished json interface
+- table.h and table.c not used, just searched for the object linearly
+
+TODO for next time:
+- integrate table.h and table.c into json objects instead of using linear search
