@@ -22,6 +22,7 @@ typedef enum {
 typedef struct {
     TokenType type;
     const char *string;
+    int line;
 } Token;
 
 void lexer_init(const char *source);
