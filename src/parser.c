@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "table.h"
+#include "json_error.h"
 
 Token *tokens = NULL;
 size_t token_count = 0;
@@ -59,15 +60,16 @@ static JsonValue *parse_value() {
         case TOKEN_LBRACK:
             return parse_array();
         default:
-            return NULL; // ERROR
+            HANDLE_ERROR("Unable to parse unknown token");
+            return NULL;
     }
 }
 
 static JsonValue *parse_object() {
     JsonValue *value = malloc(sizeof(JsonValue));
     if (!value) {
-        printf("Failed to allocate memory.\n");
-        return NULL; // ERROR
+        HANDLE_ERROR("Memory allocation failed");
+        return NULL;
     }
 
     advance();
@@ -82,21 +84,24 @@ static JsonValue *parse_object() {
     for (;;) {
         if (!match(TOKEN_STRING)) {
             free(value);
-            return NULL; // ERROR: Expect key to be string
+            HANDLE_ERROR("Expecting a string key");
+            return NULL;
         }
         JsonValue *key = parse_string();
         char *key_copy = strdup(key->as.string);
 
         if (!match(TOKEN_COLON)) {
             free(value);
-            return NULL; // ERROR: Expect colon after key
+            HANDLE_ERROR("Expect a ':' after key");
+            return NULL;
         }
         advance();
 
         JsonValue *parsed = parse_value();
         if (parsed == NULL) {
             free(value);
-            return NULL; // ERROR: error parsing
+            HANDLE_ERROR("Parsed value is NULL");
+            return NULL;
         }
 
         json_table_set(&value->as.object, key_copy, *parsed);
@@ -111,7 +116,7 @@ static JsonValue *parse_object() {
             return value; 
         }
 
-        // ERROR: expected RBRACE
+        HANDLE_ERROR("Expect '}'");
         return NULL;
     }
     return NULL;
@@ -134,7 +139,8 @@ static JsonValue *parse_array() {
     JsonValue *values = malloc(capacity * sizeof(JsonValue));
     if (!values) {
         free(value);
-        return NULL; // ERROR: memory allocation
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
     }
 
     for (;;) {
@@ -145,7 +151,8 @@ static JsonValue *parse_array() {
             if (!temp_values) {
                 free(values);
                 free(value);
-                return NULL; // ERROR: memory allocation
+                HANDLE_ERROR("Failed to allocate memory");
+                return NULL;
             }
 
             capacity = new_capacity;
@@ -170,7 +177,7 @@ static JsonValue *parse_array() {
             return value; 
         }
 
-        // ERROR: expected RBRACK
+        HANDLE_ERROR("Expect '}'");
         return NULL;
     }
     return NULL;
@@ -178,15 +185,26 @@ static JsonValue *parse_array() {
 
 static JsonValue *parse_string() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     Token token = peek();
     value->type = JSON_STRING;
     value->as.string = strdup(token.string);
+    if (!value->as.string) {
+        HANDLE_ERROR("Failed to duplicate string");
+    }
     advance();
     return value;
 }
 
 static JsonValue *parse_number() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     Token token = peek();
     value->type = JSON_NUMBER;
     value->as.number = strtod(token.string, NULL);
@@ -196,6 +214,10 @@ static JsonValue *parse_number() {
 
 static JsonValue *parse_boolean() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     Token token = peek();
     value->type = JSON_BOOLEAN;
     value->as.boolean = token.type == TOKEN_TRUE;
@@ -205,6 +227,10 @@ static JsonValue *parse_boolean() {
 
 static JsonValue *parse_null() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     value->type = JSON_NULL;
     advance();
     return value;

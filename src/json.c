@@ -7,6 +7,7 @@
 
 #include "json.h"
 #include "table.h"
+#include "json_error.h"
 
 
 JsonValue *json_init(const char *source) {
@@ -16,11 +17,16 @@ JsonValue *json_init(const char *source) {
     size_t count = 0;
     Token *tokens = malloc(capacity * sizeof(Token));
     
+    if (!tokens) {
+        HANDLE_ERROR("Failed to allocate memory.");
+    }
+    
     while (tokens[count - 1].type != TOKEN_EOF) {
         if (count + 1 > capacity) {
             size_t new_capacity = capacity * 2;
             Token *temp_tokens = realloc(tokens, new_capacity * sizeof(Token));
             if (!temp_tokens) {
+                HANDLE_ERROR("Failed to allocate memory.");
                 return NULL;
             }
             
@@ -37,36 +43,54 @@ JsonValue *json_init(const char *source) {
 }
 
 JsonValue *json_array_get(JsonValue *value, size_t index) {
-    if (index >= value->as.array.count) return NULL; // ERROR
+    if (index >= value->as.array.count) {
+        HANDLE_ERROR("index out of bounds.");
+        return NULL;
+    }
     return &(value->as.array.values[index]);
 }
 
 JsonValue *json_object_get(JsonValue *value, char *key) {
-    if (!json_is_object(value)) return NULL; // ERROR
+    if (!json_is_object(value)) {
+        HANDLE_ERROR("value is not object.");
+        return NULL;
+    }
     JsonValue *result = json_table_get(&value->as.object, key);
 
     return result;
 }
 
 double json_as_number(JsonValue *value) {
-    if (!json_is_number(value)) return -1; // ERROR
+    if (!json_is_number(value)) {
+        HANDLE_ERROR("value is not number.");
+        return -1;
+    }
     return value->as.number;
 }
 
 char *json_as_string(JsonValue *value) {
     /* Be careful, this returns a reference, it will be destroyed when the json is destroyed. */
-    if (!json_is_string(value)) return NULL; // ERROR
+    if (!json_is_string(value)) {
+        HANDLE_ERROR("value is not string");
+        return NULL;
+    }
     return value->as.string;
 }
 
 char *json_copy_string(JsonValue *value) {
-    if (value->type != JSON_STRING) return NULL; // ERROR
+    if (!json_is_string(value)) {
+        HANDLE_ERROR("value is not string");
+        return NULL;
+    }
     char *copied = strdup(value->as.string);
     return copied;
 }
 
 int json_as_bool(JsonValue *value) {
-    if (value->type != JSON_BOOLEAN) return false; // ERROR, please fix
+    if (!json_is_bool(value)) {
+        HANDLE_ERROR("value is not bool");
+        return false;
+    }
     return value->as.boolean;
 }
 
@@ -95,6 +119,11 @@ int json_is_object(JsonValue *value) {
 }
 
 static void json_print_recursive(JsonValue *value, int indent) {
+    if (!value) {
+        HANDLE_ERROR("value is NULL");
+        return;
+    }
+
     for (int i = 0; i < indent; i++)
         printf("  ");
     switch (value->type) {
@@ -133,16 +162,24 @@ static void json_print_recursive(JsonValue *value, int indent) {
             printf("NULL:\n");
             break;
         default:
-            printf("WHAT ARE YOU???\n");
+            HANDLE_ERROR("Value type unknown");
             break;
     }
 }
 
 void json_print(JsonValue *value) {
+    if (!value) {
+        HANDLE_ERROR("value is NULL");
+        return;
+    }
     json_print_recursive(value, 0);
 }
 
 void json_destroy(JsonValue *value) {
+    if (!value) {
+        HANDLE_ERROR("value is NULL");
+        return;
+    }
     switch (value->type) {
         case JSON_OBJECT: {
             for (size_t i = 0; i < value->as.object.count; i++) {
