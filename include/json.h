@@ -1,7 +1,47 @@
 #ifndef JSON_JSON_H
 #define JSON_JSON_H
 
-#include "parser.h"
+typedef enum {
+    JSON_OBJECT,
+    JSON_ARRAY,
+    JSON_STRING,
+    JSON_NUMBER,
+    JSON_BOOLEAN,
+    JSON_NULL
+} JsonType;
+
+typedef struct JsonValue JsonValue;
+typedef struct JsonMember JsonMember;
+typedef struct JsonTable JsonTable;
+
+struct JsonTable {
+    JsonMember *members;
+    char **keys;
+    size_t count;
+    size_t capacity;
+};
+
+struct JsonValue {
+    JsonType type;
+    int line;
+    union {
+        JsonTable object;
+        struct {
+            JsonValue *values;
+            size_t count;
+            size_t capacity;
+        } array;
+        char *string;
+        double number;
+        int boolean;
+    } as;
+};
+
+struct JsonMember {
+    char *key;
+    JsonValue value;
+};
+
 
 JsonValue *json_array_get(JsonValue *value, size_t index);
 JsonValue *json_object_get(JsonValue *value, char *key);
