@@ -6,6 +6,7 @@
 #include "parser.h"
 
 #include "json.h"
+#include "table.h"
 
 
 JsonValue *json_init(const char *source) {
@@ -20,7 +21,6 @@ JsonValue *json_init(const char *source) {
             size_t new_capacity = capacity * 2;
             Token *temp_tokens = realloc(tokens, new_capacity * sizeof(Token));
             if (!temp_tokens) {
-                printf("Failed to allocate memory.\n");
                 return NULL;
             }
             
@@ -42,13 +42,10 @@ JsonValue *json_array_get(JsonValue *value, size_t index) {
 }
 
 JsonValue *json_object_get(JsonValue *value, char *key) {
-    if (!json_is_object(value)) return NULL;
-    for (size_t index = 0; index < value->as.object.count; index++) {
-        if (strcmp(value->as.object.members[index].key, key) == 0) {
-            return &(value->as.object.members[index].value);
-        }
-    }
-    return NULL;
+    if (!json_is_object(value)) return NULL; // ERROR
+    JsonValue *result = json_table_get(&value->as.object, key);
+
+    return result;
 }
 
 double json_as_number(JsonValue *value) {
@@ -104,13 +101,15 @@ static void json_print_recursive(JsonValue *value, int indent) {
         case JSON_OBJECT: {
             printf("OBJECT :\n");
             for (size_t i = 0; i < value->as.object.count; i++) {
+                char *key = value->as.object.keys[i];
+                JsonValue *member_value = json_table_get(&value->as.object, key);
                 for (int i = 0; i < indent + 1; i++)
                     printf("  ");
-                printf("Key    : %s\n", value->as.object.members[i].key);
+                printf("Key    : %s\n", value->as.object.keys[i]);
                 for (int i = 0; i < indent + 1; i++)
                     printf("  ");
                 printf("Value  :\n");
-                json_print_recursive(&(value->as.object.members[i].value), indent + 2);
+                json_print_recursive(member_value, indent + 2);
             }
             break;
         }
@@ -165,7 +164,6 @@ void json_destroy(JsonValue *value) {
         case JSON_NUMBER:
         case JSON_BOOLEAN:
         case JSON_NULL:
-        case JSON_ERROR:
         default:
             break;
     }

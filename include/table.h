@@ -2,18 +2,13 @@
 #define JSON_TABLE_H
 
 #include "parser.h"
+#include "json.h"
 
-typedef struct {
-    size_t count;
-    size_t capacity;
-    JsonMember *members;
-} Table;
-
-void json_table_init(Table *table);
-void json_table_free(Table *table);
-bool json_table_get(Table *table, char *key, JsonValue *value);
-bool json_table_set(Table *table, char *key, JsonValue value);
-bool json_table_delete(Table *table, char *key); 
-void json_table_copy(Table *from, Table *to);
+void json_table_init(JsonTable *table);
+void json_table_free(JsonTable *table);
+JsonValue *json_table_get(JsonTable *table, char *key);
+bool json_table_set(JsonTable *table, char *key, JsonValue value);
+bool json_table_delete(JsonTable *table, char *key); 
+void json_table_copy(JsonTable *from, JsonTable *to);
 
 #endif
