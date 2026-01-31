@@ -41,11 +41,16 @@ static JsonMember *find_member(JsonMember *members, size_t capacity, char *key) 
     }
 }
 
-static void adjust_capacity(Table *table, size_t capacity) {
-    JsonMember *members = malloc(capacity *sizeof(JsonMember));
+static void adjust_capacity(JsonTable *table, size_t capacity) {
+    JsonMember *members = malloc(capacity * sizeof(JsonMember));
+    char **keys = malloc(capacity * sizeof(char *));
     for (size_t i = 0; i < capacity; i++) {
         members[i].key = NULL;
         members[i].value.type = JSON_NULL;
+    }
+
+    for (size_t i = 0; i < table->count; i++) {
+        keys[i] = table->keys[i];
     }
 
     table->count = 0;
@@ -60,34 +65,37 @@ static void adjust_capacity(Table *table, size_t capacity) {
     }
 
     free(table->members);
+    free(table->keys);
 
     table->members = members;
     table->capacity = capacity;
+    table->keys = keys;
 }
 
-void json_table_init(Table *table) { 
+void json_table_init(JsonTable *table) { 
     table->count = 0;
     table->capacity = 0;
     table->members = NULL;
+    table->keys = NULL;
 }
 
-void json_table_free(Table *table) {
+void json_table_free(JsonTable *table) {
     table->count = 0;
     table->capacity = 0;
     free(table->members);
+    free(table->keys);
 }
 
-bool json_table_get(Table *table, char *key, JsonValue *value) { 
-    if (table->count == 0) return false;
+JsonValue *json_table_get(JsonTable *table, char *key) { 
+    if (table->count == 0) return NULL;
 
     JsonMember *member = find_member(table->members, table->capacity, key);
-    if (member->key == NULL) return false;
+    if (member->key == NULL) return NULL;
 
-    *value = member->value;
-    return true;
+    return &member->value;
 }
 
-bool json_table_set(Table *table, char *key, JsonValue value) { 
+bool json_table_set(JsonTable *table, char *key, JsonValue value) { 
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
        size_t capacity = table->capacity ? table->capacity * 2 : 8;
         adjust_capacity(table, capacity);
@@ -95,14 +103,17 @@ bool json_table_set(Table *table, char *key, JsonValue value) {
     JsonMember *member = find_member(table->members, table->capacity, key);
     bool is_new_key = member->key == NULL;
 
-    if (is_new_key && member->value.type == JSON_NULL) table->count++;
+    if (is_new_key && member->value.type == JSON_NULL) {
+        table->keys[table->count] = key;
+        table->count++;
+    }
 
     member->key = key;
     member->value = value;
     return is_new_key;
 }
 
-bool json_table_delete(Table *table, char *key) { 
+bool json_table_delete(JsonTable *table, char *key) { 
     if (table->count == 0) return false;
 
     JsonMember *member = find_member(table->members, table->capacity, key);
@@ -110,9 +121,26 @@ bool json_table_delete(Table *table, char *key) {
 
     member->key = NULL;
     member->value.type = JSON_NULL;
+
+    // remove key from table->keys
+    int found = 0;
+    for (size_t i = 0; i < table->count; i++) {
+
+        // if already found, move the current to the previous
+        if (found) {
+            table->keys[i-1] = table->keys[i]; 
+            continue;
+        }
+
+        if (strcmp(table->keys[i], key) == 0) {
+            found = 1;
+        }
+    }
+    table->count--;
+
     return true;
 }
 
-void json_table_copy(Table *from, Table *to) {
+void json_table_copy(JsonTable *from, JsonTable *to) {
 
 }

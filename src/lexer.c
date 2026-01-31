@@ -6,10 +6,12 @@
 
 char *start;
 char *current;
+int line;
 
 void lexer_init(const char *source) {
     start = source;
     current = source;
+    line = 1;
 }
 
 static bool is_digit(char c) {
@@ -41,6 +43,7 @@ static Token make_token(TokenType type, char *string) {
     Token token;
     token.type = type;
     token.string = string;
+    token.line = line;
     return token;
 }
 
@@ -48,6 +51,7 @@ static Token make_error_token(char *message) {
     Token token;
     token.type = TOKEN_ERROR;
     token.string = message;
+    token.line = line;
     return token;
 }
 
@@ -123,8 +127,11 @@ void skip_whitespace() {
             case ' ':
             case '\t':
             case '\r':
+                advance();
+                break;
             case '\n':
                 advance();
+                line++;
                 break;
             default: 
                 return;
@@ -156,6 +163,6 @@ Token scan_token() {
 }
 
 void print_token(Token token) {
-    printf("Type: %12s  Content: %s", token_type_to_string(token.type), token.string);
+    printf("Type: %12s\nContent: %s\nLine: %d", token_type_to_string(token.type), token.string, token.line);
     printf("\n");
 }

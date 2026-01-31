@@ -4,6 +4,8 @@
 
 #include "parser.h"
 #include "lexer.h"
+#include "table.h"
+#include "json_error.h"
 
 Token *tokens = NULL;
 size_t token_count = 0;
@@ -58,70 +60,51 @@ static JsonValue *parse_value() {
         case TOKEN_LBRACK:
             return parse_array();
         default:
-            return NULL; // ERROR
+            HANDLE_ERROR("Unable to parse unknown token");
+            return NULL;
     }
 }
 
 static JsonValue *parse_object() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Memory allocation failed");
+        return NULL;
+    }
+
     advance();
+    
+    value->type = JSON_OBJECT;
+    json_table_init(&value->as.object);
 
     if (match(TOKEN_RBRACE)) {
-        value->type = JSON_OBJECT;
-        value->as.object.count = 0;
-        value->as.object.members = NULL;
         return value;
     }
 
-    size_t count = 0;
-    size_t capacity = 4;
-    JsonMember *members = malloc(capacity * sizeof(JsonMember));
-    if (!members) {
-        free(value);
-        return NULL; // ERROR: memory allocation
-    }
-
     for (;;) {
-        if (count >= capacity) {
-            size_t new_capacity = capacity * 2;
-            JsonMember *temp_members = realloc(members, new_capacity * sizeof(JsonMember));
-
-            if (!temp_members) {
-                free(members);
-                free(value);
-                return NULL; // ERROR: memory allocation
-            }
-
-            capacity = new_capacity;
-            members = temp_members;
-        }
-
         if (!match(TOKEN_STRING)) {
-            free(members);
             free(value);
-            return NULL; // ERROR: Expect key to be string
+            HANDLE_ERROR("Expecting a string key");
+            return NULL;
         }
         JsonValue *key = parse_string();
         char *key_copy = strdup(key->as.string);
 
         if (!match(TOKEN_COLON)) {
-            free(members);
             free(value);
-            return NULL; // ERROR: Expect colon after key
+            HANDLE_ERROR("Expect a ':' after key");
+            return NULL;
         }
         advance();
 
         JsonValue *parsed = parse_value();
-        if (parsed->type == JSON_ERROR) {
-            free(members);
-            free(value);            free(value);
-
-            return NULL; // ERROR: error parsing
+        if (parsed == NULL) {
+            free(value);
+            HANDLE_ERROR("Parsed value is NULL");
+            return NULL;
         }
 
-        members[count].key = key_copy;
-        members[count].value = *parsed;
-        count++;
+        json_table_set(&value->as.object, key_copy, *parsed);
 
         if (match(TOKEN_COMMA)) {
             advance();
@@ -130,19 +113,10 @@ static JsonValue *parse_object() {
 
         if (match(TOKEN_RBRACE)) {
             advance();
-            members = realloc(members, count * sizeof(JsonMember));
-            if (!members) {
-                free(members);
-                free(value);
-                return NULL; // ERROR: memory allocation
-            }
-            value->type = JSON_OBJECT;
-            value->as.object.count = count;
-            value->as.object.members = members;
             return value; 
         }
 
-        // ERROR: expected RBRACE
+        HANDLE_ERROR("Expect '}'");
         return NULL;
     }
     return NULL;
@@ -165,7 +139,8 @@ static JsonValue *parse_array() {
     JsonValue *values = malloc(capacity * sizeof(JsonValue));
     if (!values) {
         free(value);
-        return NULL; // ERROR: memory allocation
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
     }
 
     for (;;) {
@@ -176,7 +151,8 @@ static JsonValue *parse_array() {
             if (!temp_values) {
                 free(values);
                 free(value);
-                return NULL; // ERROR: memory allocation
+                HANDLE_ERROR("Failed to allocate memory");
+                return NULL;
             }
 
             capacity = new_capacity;
@@ -201,7 +177,7 @@ static JsonValue *parse_array() {
             return value; 
         }
 
-        // ERROR: expected RBRACK
+        HANDLE_ERROR("Expect '}'");
         return NULL;
     }
     return NULL;
@@ -209,15 +185,26 @@ static JsonValue *parse_array() {
 
 static JsonValue *parse_string() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     Token token = peek();
     value->type = JSON_STRING;
     value->as.string = strdup(token.string);
+    if (!value->as.string) {
+        HANDLE_ERROR("Failed to duplicate string");
+    }
     advance();
     return value;
 }
 
 static JsonValue *parse_number() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     Token token = peek();
     value->type = JSON_NUMBER;
     value->as.number = strtod(token.string, NULL);
@@ -227,6 +214,10 @@ static JsonValue *parse_number() {
 
 static JsonValue *parse_boolean() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     Token token = peek();
     value->type = JSON_BOOLEAN;
     value->as.boolean = token.type == TOKEN_TRUE;
@@ -236,6 +227,10 @@ static JsonValue *parse_boolean() {
 
 static JsonValue *parse_null() {
     JsonValue *value = malloc(sizeof(JsonValue));
+    if (!value) {
+        HANDLE_ERROR("Failed to allocate memory");
+        return NULL;
+    }
     value->type = JSON_NULL;
     advance();
     return value;
