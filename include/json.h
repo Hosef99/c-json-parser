@@ -60,6 +60,7 @@ int json_is_object(JsonValue *value);
 
 JsonValue *json_init(const char *source);
 void json_print(JsonValue *value);
+void json_write_compact(JsonValue *value, const char *filepath);
 void json_destroy(JsonValue *value);
 
 #endif

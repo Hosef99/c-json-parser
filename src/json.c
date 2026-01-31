@@ -175,6 +175,71 @@ void json_print(JsonValue *value) {
     json_print_recursive(value, 0);
 }
 
+static void json_write_compact_recursive(JsonValue *value, FILE *file) {
+    switch (value->type) {
+        case JSON_OBJECT: {
+            fprintf(file, "{");
+            size_t count = value->as.object.count;
+            for (size_t index = 0; index < count; index++) {
+                char *key = value->as.object.keys[index];
+                JsonValue *member_value = json_table_get(&value->as.object, key);
+                fprintf(file, "\"%s\":", key);
+                json_write_compact_recursive(member_value, file);
+                if (index != count - 1) {
+                    fprintf(file, ",");
+                }
+            }
+            fprintf(file, "}");
+            break;
+        }
+        case JSON_ARRAY: {
+            fprintf(file, "[");
+            size_t count = value->as.array.count;
+            for (size_t index = 0; index < count; index++) {
+                json_write_compact_recursive(&value->as.array.values[index], file);
+                if (index != count - 1) {
+                    fprintf(file, ",");
+                }
+            }
+            fprintf(file, "]");
+            break;
+        }
+        case JSON_STRING: {
+            fprintf(file, "\"%s\"", value->as.string);
+            break;
+        }
+        case JSON_NUMBER: {
+            fprintf(file, "%g", value->as.number);
+            break;
+        }
+        case JSON_BOOLEAN: {
+            fprintf(file, "%s", value->as.boolean ? "true" : "false");
+            break;
+        }
+        case JSON_NULL: {
+            fprintf(file, "null");
+            break;
+        }
+        default:
+            HANDLE_ERROR("Value type unknown");
+            return;
+    }
+}
+
+void json_write_compact(JsonValue *value, const char *filepath) {
+    if (!value) {
+        HANDLE_ERROR("value is NULL");
+        return;
+    }
+    FILE *file = fopen(filepath, "w");
+    if (!file) {
+        HANDLE_ERROR("Value type unknown");
+        return;
+    }
+
+    json_write_compact_recursive(value, file);
+}
+
 void json_destroy(JsonValue *value) {
     if (!value) {
         HANDLE_ERROR("value is NULL");
