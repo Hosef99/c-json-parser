@@ -6,13 +6,11 @@
 #include "table.h"
 
 void test_json() {
-    const char *source = read_file("data/test/example1.json");
+    const char *source = read_file("data/test/output_formatted.json");
 
     JsonValue *value = json_init(source);
 
     json_print(value);
-
-    json_write_compact(value, "data/test/output.json");
 }
 
 void test_table() {

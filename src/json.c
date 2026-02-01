@@ -240,6 +240,79 @@ void json_write_compact(JsonValue *value, const char *filepath) {
     json_write_compact_recursive(value, file);
 }
 
+static void json_write_recursive(JsonValue *value, FILE *file, int indent) {
+    switch (value->type) {
+        case JSON_OBJECT: {
+            fprintf(file, "{\n");
+            size_t count = value->as.object.count;
+            for (size_t index = 0; index < count; index++) {
+                char *key = value->as.object.keys[index];
+                JsonValue *member_value = json_table_get(&value->as.object, key);
+                for (int i = 0; i < indent + 1; i++) 
+                    fprintf(file, "    ");
+                fprintf(file, "\"%s\": ", key);
+                json_write_recursive(member_value, file, indent + 1);
+                if (index != count - 1) 
+                    fprintf(file, ",\n");
+            }
+            fprintf(file, "\n");
+            for (int i = 0; i < indent; i++)
+                fprintf(file, "    ");
+            fprintf(file, "}");
+            break;
+        }
+        case JSON_ARRAY: {
+            fprintf(file, "[\n");
+            size_t count = value->as.array.count;
+            for (size_t index = 0; index < count; index++) {
+                for (int i = 0; i < indent + 1; i++)
+                    fprintf(file, "    ");
+                json_write_recursive(&value->as.array.values[index], file, indent + 1);
+                if (index != count - 1) 
+                    fprintf(file, ",\n");
+            }
+            fprintf(file, "\n");
+            for (int i = 0; i < indent; i++)
+                fprintf(file, "    ");
+            fprintf(file, "]");
+            break;
+        }
+        case JSON_STRING: {
+            fprintf(file, "\"%s\"", value->as.string);
+            break;
+        }
+        case JSON_NUMBER: {
+            fprintf(file, "%g", value->as.number);
+            break;
+        }
+        case JSON_BOOLEAN: {
+            fprintf(file, "%s", value->as.boolean ? "true" : "false");
+            break;
+        }
+        case JSON_NULL: {
+            fprintf(file, "null");
+            break;
+        }
+        default:
+            HANDLE_ERROR("Value type unknown");
+            return;
+    }
+}
+
+void json_write(JsonValue *value, const char *filepath) {
+    if (!value) {
+        HANDLE_ERROR("value is NULL");
+        return;
+    }
+    FILE *file = fopen(filepath, "w");
+    if (!file) {
+        HANDLE_ERROR("Value type unknown");
+        return;
+    }
+
+    json_write_recursive(value, file, 0);
+}
+
 void json_destroy(JsonValue *value) {
     if (!value) {
         HANDLE_ERROR("value is NULL");
